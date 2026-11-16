@@ -1,13 +1,34 @@
 # yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
 # =============================================================================
-# CodeRabbit config for mmani-demo-prs (Rabbit Outfitters microservices demo).
-# Rules live in code: path instructions, org + commerce guidelines, a linked
-# downstream consumer, and pre-merge checks that gate security and order invariants.
+# CodeRabbit config for mmani-demo-prs-approvals (Rabbit Outfitters microservices
+# demo, approval-policy variant). Same rules as mmani-demo-prs, plus risk-limited
+# automatic approval: CodeRabbit supplies one of the two required approvals when
+# merge risk is low and every pre-merge check passes. A person supplies the other.
 # =============================================================================
 language: en-US
 
+tone_instructions: >-
+  Speak like a senior reviewer. Open each finding with "Observation:" and tie it to the exact line and the invariant at risk. Explain the why and the impact. No silent refactors, no emoji, no filler. You aid the human review, not replace it.
+
 reviews:
   profile: chill
+
+  # Approve only low-risk PRs. Anything rated moderate or higher, or without a
+  # current merge-risk assessment, waits for two human approvals.
+  auto_approvals:
+    enabled: true
+    max_merge_risk: low
+    allow_author_approval: false
+
+  merge_risk_instructions: >-
+    High risk: removing or weakening a transaction, row lock, or CHECK constraint; SQL
+    built from strings; changes to packages/contracts/src/orders.ts, which another
+    repository consumes; changes to gateway authentication or the public route
+    allow-list. Moderate risk: new routes, new tables, or changes to how totals are
+    computed in services/orders/src/pricing.ts. Low risk: a narrow change to one
+    query's filter or one validation rule in a single service, with no schema or
+    contract change and a test that asserts the new behavior. Minimal risk: docs,
+    comments, or test-only changes.
   high_level_summary: true
   changed_files_summary: true
   sequence_diagrams: true
@@ -67,36 +88,8 @@ reviews:
     # Validates the PR against its linked Jira work item (project SC).
     issue_assessment:
       mode: error
-    custom_checks:
-      - name: "Security Gate"
-        mode: error
-        instructions: >-
-          Fail only when the review finds a major or critical SECURITY issue in this PR, such
-          as SQL injection, broken access control, secrets in code, or SSRF. Do not fail on
-          functional or style issues.
-      - name: "Jira Work Item"
-        mode: error
-        instructions: >-
-          Pass only when the PR title or description references a Jira work item in the SC
-          project (for example SC-123) and the change stays within that work item's scope.
-          Fail when no SC key is referenced, or when the PR includes changes the work item
-          does not ask for; list those changes.
-      - name: "Success Criteria"
-        mode: error
-        instructions: >-
-          Read the linked Jira work item in project SC and find its "Success criteria" list
-          (items S1, S2, ...). Evaluate every criterion against this PR's code, schema, and
-          tests. For each, report Met, Not met, or Not verifiable, with the file and line that
-          shows it. A criterion is Met only when the code implements it AND a test asserts the
-          stated values; a test asserting different values does not count. Fail if any
-          criterion is Not met. Pass only when all criteria are Met.
-      - name: "Order Invariants"
-        mode: error
-        instructions: >-
-          Fail when the PR can produce an order line with quantity < 1, a negative unit price,
-          a discount stored as an order line, discountCents greater than subtotalCents, a
-          negative netCents, a weakened CHECK constraint, or a discount redemption that is not
-          atomic. Otherwise pass.
+    # Custom checks live as Markdown in .coderabbit/pre-merge-checks/ and report
+    # as GitHub Check Runs, so branch protection can require them.
 
   finishing_touches:
     docstrings:

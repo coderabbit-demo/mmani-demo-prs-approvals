@@ -4,6 +4,13 @@ A small storefront built as independent services. It is the base application for
 CodeRabbit PR examples in this repository: each demo PR is an ordinary feature change made on
 top of this `main` branch.
 
+> **Approval-policy variant.** This repository is a copy of
+> [`mmani-demo-prs`](https://github.com/coderabbit-demo/mmani-demo-prs) used to demo
+> risk-limited automatic approval. `main` requires two approvals; CodeRabbit supplies one
+> when merge risk is low and every pre-merge check passes (`reviews.auto_approvals` in
+> `.coderabbit.yaml`). Custom pre-merge checks are Markdown files in
+> `.coderabbit/pre-merge-checks/`.
+
 ```
 browser ──▶ gateway :8080 ──▶ catalog :4001   (products, stock)       catalog.db
   (React)     /api/*      └──▶ orders  :4002   (carts, pricing, checkout) orders.db
