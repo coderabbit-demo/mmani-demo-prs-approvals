@@ -57,10 +57,14 @@ export function findDiscountCode(db: DatabaseSync, code: string): DiscountCode |
   };
 }
 
-/** Reject codes that cannot be used now: inactive or expired codes get 422. */
+/**
+ * Reject codes that cannot be used now with 422. A switched-off code reports
+ * "not active"; an active code past its expiry reports "has expired".
+ */
 export function assertUsable(code: DiscountCode, now: Date = new Date()): void {
-  if (!code.active || (code.expiresAt !== null && new Date(code.expiresAt) <= now)) {
-    throw new HttpError(422, "Discount code is not active");
+  if (!code.active) throw new HttpError(422, "Discount code is not active");
+  if (code.expiresAt !== null && new Date(code.expiresAt) <= now) {
+    throw new HttpError(422, "Discount code has expired");
   }
 }
 

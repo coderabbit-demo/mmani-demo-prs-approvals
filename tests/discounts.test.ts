@@ -111,3 +111,18 @@ test("rejects malformed, unknown, and expired codes", async () => {
   assert.equal((await applyCode(ADA, orderId, "NOPE123")).status, 404);
   assert.equal((await applyCode(ADA, orderId, "SUMMER25")).status, 422);
 });
+
+test("tells the shopper whether a code expired or was switched off", async () => {
+  stack.ordersDb
+    .prepare("INSERT INTO discount_codes (code, kind, value, active) VALUES (?, ?, ?, ?)")
+    .run("PAUSED5", "percent", 5, 0);
+  const orderId = await cartWith(ADA, [["HOODIE-GRY-L", 1]]);
+
+  const expired = await applyCode(ADA, orderId, "SUMMER25");
+  assert.equal(expired.status, 422);
+  assert.deepEqual(expired.body, { error: "Discount code has expired" });
+
+  const inactive = await applyCode(ADA, orderId, "PAUSED5");
+  assert.equal(inactive.status, 422);
+  assert.deepEqual(inactive.body, { error: "Discount code is not active" });
+});
